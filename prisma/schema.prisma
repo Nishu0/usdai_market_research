@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Market activity tracking for Morpho Blue
+model MarketActivity {
+  id              String   @id @default(cuid())
+  type            String   // "supply", "withdraw", "borrow", "repay"
+  amount          String   // Store as string for precision (wei/smallest unit)
+  amountFormatted String   // Human-readable amount
+  userAddress     String
+  transactionHash String
+  blockNumber     Int
+  timestamp       DateTime
+  marketId        String
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([transactionHash, type, userAddress])
+  @@index([userAddress])
+  @@index([type])
+  @@index([marketId])
+  @@index([timestamp])
+}
+
+// Aggregated statistics per user
+model UserPosition {
+  id              String   @id @default(cuid())
+  userAddress     String   @unique
+  marketId        String
+  
+  totalSupplied   String   @default("0")
+  totalWithdrawn  String   @default("0")
+  netSupply       String   @default("0")
+  
+  totalBorrowed   String   @default("0")
+  totalRepaid     String   @default("0")
+  netBorrow       String   @default("0")
+  
+  borrowShares    String   @default("0")
+  
+  lastUpdated     DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  
+  @@index([marketId])
+}
+
+// Market totals snapshot
+model MarketSnapshot {
+  id              String   @id @default(cuid())
+  marketId        String
+  
+  totalSupply     String
+  totalBorrow     String
+  
+  snapshotBlock   Int
+  timestamp       DateTime
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([marketId])
+  @@index([timestamp])
+}
